@@ -293,7 +293,7 @@ admin_dashboard.html
 وابحثي عن:
 
 ```js
-SUPABASE_URL: "https://hnsbsvwxxxysjnhgtinl.supabase.co",
+SUPABASE_URL: "https://hbubanrnlwhlbfqpuwbo.supabase.co",
 SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhuc2Jzdnd4eHh5c2puaGd0aW5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NTMwNjAsImV4cCI6MjA5ODQyOTA2MH0.QtzYlzjmoGNvjhJhxdGxEwUTKWm0WHGGKn2THSBOgAo",
 ```
 
@@ -531,14 +531,14 @@ netlify.toml
 ```txt
 APP_NAME = Emergency Room Parking
 LIVE_SITE_URL = https://garagey.netlify.app
-SUPABASE_URL = https://hnsbsvwxxxysjnhgtinl.supabase.co
+SUPABASE_URL = https://hbubanrnlwhlbfqpuwbo.supabase.co
 SUPABASE_ANON_KEY = تم إدخاله داخل ملفات HTML
 ```
 
 ملاحظة: رابط Supabase الذي أعطيته كان يحتوي `/rest/v1/`، وتم تصحيحه داخل الملفات إلى رابط المشروع الأساسي:
 
 ```txt
-https://hnsbsvwxxxysjnhgtinl.supabase.co
+https://hbubanrnlwhlbfqpuwbo.supabase.co
 ```
 
 
