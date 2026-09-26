@@ -1,0 +1,436 @@
+<!doctype html>
+<!-- V1.8: trusted-device automatic entry + result-first employee screen -->
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>تسجيل / تحقق الموظف | Emergency Room Parking</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="apple-touch-icon" href="./logo.jpeg" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg:#020813; --panel:rgba(15,23,42,.78); --line:rgba(148,163,184,.22);
+      --text:#e5f2ff; --muted:#9fb3c8; --blue:#38bdf8; --green:#22c55e;
+      --red:#ef4444; --yellow:#facc15;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif;color:var(--text);
+      background:
+        radial-gradient(circle at 15% 0%,rgba(56,189,248,.18),transparent 34%),
+        radial-gradient(circle at 85% 5%,rgba(250,204,21,.10),transparent 30%),
+        linear-gradient(180deg,#020813 0%,#06101f 46%,#000 100%)}
+    body{min-height:100vh;overflow-x:hidden}
+    .app-shell{width:min(980px,100%);margin:auto;padding:12px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand-icon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:21px;
+      background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.32)}
+    .brand-title{margin:0;font-size:clamp(18px,4vw,27px);font-weight:950}
+    .brand-subtitle{color:var(--muted);font-size:12px;margin-top:3px}
+    .pill{padding:8px 12px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted);background:rgba(15,23,42,.72)}
+    .pill.ready{color:#bae6fd;border-color:rgba(56,189,248,.35)}
+    .pill.error{color:#fecaca;border-color:rgba(239,68,68,.4)}
+
+    .result-card{min-height:235px;display:grid;place-items:center;text-align:center;border-radius:26px;
+      border:2px solid rgba(56,189,248,.35);background:rgba(2,8,19,.78);
+      box-shadow:0 0 42px rgba(56,189,248,.20);padding:18px;margin-bottom:12px;transition:.2s}
+    .result-card.allowed{border-color:rgba(34,197,94,.78);box-shadow:0 0 58px rgba(34,197,94,.42)}
+    .result-card.denied{border-color:rgba(239,68,68,.78);box-shadow:0 0 58px rgba(239,68,68,.42)}
+    .result-card.limited{border-color:rgba(250,204,21,.82);box-shadow:0 0 58px rgba(250,204,21,.35)}
+    .result-icon{width:82px;height:82px;border-radius:50%;display:grid;place-items:center;margin:0 auto 12px;
+      font-size:38px;border:1px solid rgba(56,189,248,.35);background:rgba(56,189,248,.10)}
+    .result-title{margin:0;font-size:clamp(28px,7vw,46px);font-weight:950}
+    .result-message{margin:10px auto 0;max-width:620px;color:var(--muted);line-height:1.8;font-size:clamp(15px,3.8vw,20px)}
+
+    .notice{margin:10px 0;padding:12px;border-radius:15px;border:1px solid rgba(250,204,21,.36);
+      background:rgba(250,204,21,.10);color:#fef3c7;line-height:1.7}
+    .notice.error{border-color:rgba(239,68,68,.42);background:rgba(239,68,68,.10);color:#fecaca}
+    .notice.ok{border-color:rgba(34,197,94,.38);background:rgba(34,197,94,.10);color:#bbf7d0}
+    .hidden{display:none!important}
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:18px;backdrop-filter:blur(18px)}
+    .panel h2{margin:0 0 6px;font-size:clamp(20px,5vw,28px)}
+    .desc{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.7}
+    label{display:block;color:var(--muted);font-size:13px;margin:11px 0 5px}
+    input,select{width:100%;border:1px solid rgba(148,163,184,.28);background:#08111f;color:var(--text);
+      border-radius:15px;padding:13px;outline:0;font-family:inherit;font-size:15px}
+    input:focus,select:focus{border-color:rgba(56,189,248,.6);box-shadow:0 0 0 4px rgba(56,189,248,.08)}
+    button{width:100%;border:0;cursor:pointer;color:#fff;font-weight:900;border-radius:15px;padding:13px 15px;
+      margin-top:14px;background:linear-gradient(135deg,#0284c7,#0ea5e9);font-family:inherit;font-size:15px}
+    button.green{background:linear-gradient(135deg,#15803d,#22c55e)}
+    button.soft{background:rgba(15,23,42,.82);border:1px solid rgba(56,189,248,.25)}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .device-panel{margin-top:12px;padding:12px;border-radius:16px;border:1px solid rgba(34,197,94,.28);background:rgba(6,95,70,.16)}
+    .device-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .device-actions button{margin-top:8px}
+    .section-title{font-size:13px;color:#bae6fd;margin:0 0 8px;font-weight:900}
+    .footer{text-align:center;color:var(--muted);font-size:11px;padding:16px 0}
+  </style>
+</head>
+
+<body>
+<main class="app-shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">🅿️</div>
+      <div>
+        <h1 class="brand-title" id="appTitle">Emergency Room Parking</h1>
+        <div class="brand-subtitle">التحقق والتسجيل للموظفين</div>
+      </div>
+    </div>
+    <div class="pill" id="connectionBadge">جارِ فحص الاتصال...</div>
+  </header>
+
+  <!-- النتيجة في أعلى الشاشة دائمًا -->
+  <section class="result-card" id="resultCard" aria-live="assertive">
+    <div>
+      <div class="result-icon" id="resultIcon">◆</div>
+      <h2 class="result-title" id="resultTitle">جارِ التحقق</h2>
+      <p class="result-message" id="resultMessage">يرجى الانتظار لحظة حتى يتم فحص رمز QR.</p>
+    </div>
+  </section>
+
+  <div id="setupWarning" class="notice hidden"></div>
+  <div id="qrSessionStatus" class="notice hidden"></div>
+
+  <section class="grid" id="manualSections">
+    <div class="panel">
+      <h2>موظف مسجل — تسجيل الدخول</h2>
+      <p class="desc">أدخل رقم الموظف ورقم الهاتف بعد مسح QR من شاشة الحارس.</p>
+
+      <form id="checkForm">
+        <label for="checkEmployeeId">رقم الموظف</label>
+        <input id="checkEmployeeId" type="text" placeholder="رقم الموظف" inputmode="numeric" required />
+
+        <label for="checkMobileNumber">رقم الهاتف</label>
+        <input id="checkMobileNumber" type="tel" placeholder="رقم الهاتف" inputmode="tel" required />
+
+        <button type="submit" id="checkButton">تحقق من الدخول</button>
+      </form>
+
+      <div id="autoDevicePanel" class="device-panel hidden">
+        <div class="section-title">التحقق السريع من هذا الجهاز</div>
+        <div id="autoDeviceText" class="desc">يمكن ربط الجهاز بعد موافقة الإدارة.</div>
+        <div class="device-actions">
+          <button type="button" id="enableAutoDeviceButton" class="green" onclick="enableTrustedDeviceOnThisBrowser()">تفعيل الجهاز</button>
+          <button type="button" class="soft" onclick="forgetTrustedDeviceOnThisBrowser()">نسيان الجهاز</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>موظف جديد — التسجيل</h2>
+      <p class="desc">عبّئ الطلب مرة واحدة، ثم تنتظر موافقة الإدارة.</p>
+
+      <form id="registerForm">
+        <label for="fullName">الاسم الكامل</label>
+        <input id="fullName" type="text" placeholder="الاسم الكامل" autocomplete="name" required />
+
+        <label for="employeeId">رقم الموظف</label>
+        <input id="employeeId" type="text" placeholder="رقم الموظف" inputmode="numeric" required />
+
+        <label for="mobileNumber">رقم الهاتف</label>
+        <input id="mobileNumber" type="tel" placeholder="رقم الهاتف" inputmode="tel" autocomplete="tel" required />
+
+        <label for="specialty">القسم / الاختصاص</label>
+        <select id="specialty" required>
+          <option value="">اختر القسم</option>
+          <option value="الإسعاف والطوارئ (DRS/NRS/EMT/MLT)">الإسعاف والطوارئ (DRS/NRS/EMT/MLT)</option>
+          <option>جراحة عامة</option><option>باطني</option><option>ENT</option><option>نسائية</option>
+          <option>مسالك بولية</option><option>عيون</option><option>جراحة دماغ وأعصاب</option>
+          <option>تخدير</option><option>طب عام</option><option>جراحة أوعية دموية</option><option>أخرى</option>
+        </select>
+
+        <button type="submit" id="registerButton" class="green">إرسال طلب التسجيل</button>
+      </form>
+    </div>
+  </section>
+
+  <footer class="footer">Concept &amp; Programming — Dr. Alaa Aqrabawi</footer>
+</main>
+
+<script>
+  const APP_CONFIG = {
+    APP_NAME: "Emergency Room Parking",
+    SUPABASE_URL: "https://hnsbsvwxxxysjnhgtinl.supabase.co",
+    SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhuc2Jzdnd4eHh5c2puaGd0aW5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NTMwNjAsImV4cCI6MjA5ODQyOTA2MH0.QtzYlzjmoGNvjhJhxdGxEwUTKWm0WHGGKn2THSBOgAo"
+  };
+
+  let supabaseClient = null;
+  const $ = (id) => document.getElementById(id);
+  const urlParams = new URLSearchParams(location.search);
+  const qrToken = urlParams.get("token");
+  let activeQrToken = qrToken;
+  let qrClaimReady = false;
+  let lastManualCheck = null;
+  const TRUSTED_DEVICE_STORAGE_KEY = "erp_trusted_device_token_v1";
+
+  function normalizeRpcData(data, fnName) {
+    let value = Array.isArray(data) ? data[0] : data;
+    if (typeof value === "string") { try { value = JSON.parse(value); } catch { return null; } }
+    if (value && fnName && value[fnName]) value = value[fnName];
+    if (typeof value === "string") { try { value = JSON.parse(value); } catch { return null; } }
+    return value;
+  }
+
+  function setConnection(text, type="ready") {
+    const el=$("connectionBadge");
+    el.textContent=text;
+    el.className="pill "+(type==="error"?"error":"ready");
+  }
+
+  function showSetupWarning(message,type="warning") {
+    const el=$("setupWarning");
+    el.textContent=message;
+    el.className="notice";
+    if(type==="error") el.classList.add("error");
+    if(type==="ok") el.classList.add("ok");
+    el.classList.remove("hidden");
+  }
+
+  function setQrSessionStatus(message,type="warning") {
+    const el=$("qrSessionStatus");
+    el.textContent=message;
+    el.className="notice";
+    if(type==="error") el.classList.add("error");
+    if(type==="ok") el.classList.add("ok");
+    el.classList.remove("hidden");
+  }
+
+  function setResult(result,message) {
+    const card=$("resultCard"), icon=$("resultIcon"), title=$("resultTitle"), msg=$("resultMessage");
+    card.className="result-card";
+
+    if(result==="ALLOWED"){
+      card.classList.add("allowed"); icon.textContent="✓"; title.textContent="مسموح بالدخول";
+    } else if(result==="LIMITED" || result==="PENDING_FIRST_ENTRY"){
+      card.classList.add("limited"); icon.textContent="!"; title.textContent="مسموح جزئيًا";
+    } else if(result==="PENDING"){
+      card.classList.add("limited"); icon.textContent="…"; title.textContent="الطلب قيد المراجعة";
+    } else if(result==="NOT_FOUND"){
+      card.classList.add("denied"); icon.textContent="?"; title.textContent="الموظف غير موجود";
+    } else if(result==="DENIED"){
+      card.classList.add("denied"); icon.textContent="×"; title.textContent="غير مسموح";
+    } else if(result==="WAITING"){
+      icon.textContent="⏳"; title.textContent="جارِ التحقق";
+    } else if(result==="READY"){
+      icon.textContent="◆"; title.textContent="QR صالح";
+    } else {
+      icon.textContent="◆"; title.textContent="تمت العملية";
+    }
+
+    msg.textContent=message || "تمت العملية.";
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  function showManualSections(show=true){
+    const sections=$("manualSections");
+    if(sections) sections.classList.toggle("hidden", !show);
+  }
+
+  function disableButton(id,disabled,busyText,normalText){
+    const button=$(id); button.disabled=disabled; button.textContent=disabled?busyText:normalText;
+  }
+
+  function initSupabase(){
+    $("appTitle").textContent=APP_CONFIG.APP_NAME;
+    if(!APP_CONFIG.SUPABASE_URL || !APP_CONFIG.SUPABASE_ANON_KEY){
+      setConnection("Supabase غير مفعّل","error");
+      setResult("DENIED","لا يمكن الاتصال بالنظام.");
+      return;
+    }
+    supabaseClient=supabase.createClient(APP_CONFIG.SUPABASE_URL,APP_CONFIG.SUPABASE_ANON_KEY);
+    setConnection("Supabase جاهز");
+  }
+
+  async function claimQrSessionIfPresent(){
+    if(!qrToken){
+      qrClaimReady=false;
+      showManualSections(true);
+      setResult("DENIED","يجب مسح QR مباشر من شاشة الحارس أولًا.");
+      setQrSessionStatus("لم يتم العثور على QR صالح.","error");
+      return;
+    }
+    if(!supabaseClient) return;
+
+    try{
+      setResult("WAITING","جارِ تفعيل QR والتحقق من صلاحيته...");
+      const {data,error}=await supabaseClient.rpc("claim_qr_session",{p_token:qrToken});
+      const result=normalizeRpcData(data,"claim_qr_session");
+
+      if(error || !result || result.ok!==true || !result.claim_token){
+        qrClaimReady=false;
+        setResult("DENIED",error?.message || result?.message || "QR غير صالح أو منتهي. امسح QR جديدًا.");
+        return;
+      }
+
+      activeQrToken=result.claim_token;
+      qrClaimReady=true;
+      setQrSessionStatus(result.message || "تم تفعيل QR. أكمل خلال 5 دقائق.","ok");
+
+      const storedToken=getTrustedDeviceToken();
+      if(storedToken){
+        showManualSections(false);
+        setResult("WAITING","تم التعرف على جهاز محفوظ. جارِ التحقق تلقائيًا...");
+        await tryAutoVerifyFromTrustedDevice();
+      }else{
+        showManualSections(true);
+        setResult("READY","QR صالح. سجّل الدخول مرة واحدة، ثم فعّل هذا الجهاز للدخول التلقائي لاحقًا.");
+      }
+    }catch(err){
+      qrClaimReady=false;
+      setResult("DENIED","فشل تفعيل QR: "+(err.message||String(err)));
+    }
+  }
+
+  function getTrustedDeviceToken(){ return localStorage.getItem(TRUSTED_DEVICE_STORAGE_KEY)||""; }
+  function saveTrustedDeviceToken(token){ localStorage.setItem(TRUSTED_DEVICE_STORAGE_KEY,token); }
+  function clearTrustedDeviceToken(){ localStorage.removeItem(TRUSTED_DEVICE_STORAGE_KEY); }
+  function generateTrustedDeviceToken(){
+    const bytes=new Uint8Array(48); crypto.getRandomValues(bytes);
+    return Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join("");
+  }
+
+  function setAutoDevicePanel(message,type="warning",visible=true){
+    const panel=$("autoDevicePanel"), text=$("autoDeviceText");
+    text.textContent=message; panel.classList.toggle("hidden",!visible);
+  }
+
+  function forgetTrustedDeviceOnThisBrowser(){
+    clearTrustedDeviceToken();
+    setAutoDevicePanel("تم نسيان هذا الجهاز من المتصفح.", "warning", true);
+  }
+
+  async function checkTrustedDeviceEligibility(employeeId,mobileNumber){
+    try{
+      const {data,error}=await supabaseClient.rpc("can_register_trusted_device",{
+        p_employee_id:employeeId,p_mobile_number:mobileNumber
+      });
+      const result=normalizeRpcData(data,"can_register_trusted_device");
+      if(!error && result?.eligible===true){
+        lastManualCheck={employeeId,mobileNumber};
+        setAutoDevicePanel(result.message||"يمكن تفعيل هذا الجهاز.","ok",true);
+      }else{
+        lastManualCheck=null;
+        setAutoDevicePanel(result?.message||"هذا الجهاز غير مؤهل للتفعيل.","warning",true);
+      }
+    }catch{
+      setAutoDevicePanel("تعذر فحص أهلية الجهاز.","warning",false);
+    }
+  }
+
+  async function enableTrustedDeviceOnThisBrowser(){
+    if(!lastManualCheck){ setAutoDevicePanel("نفّذ تحققًا ناجحًا أولًا.","warning",true); return; }
+    const button=$("enableAutoDeviceButton"); button.disabled=true;
+    try{
+      const token=generateTrustedDeviceToken();
+      const {data,error}=await supabaseClient.rpc("register_trusted_device",{
+        p_employee_id:lastManualCheck.employeeId,
+        p_mobile_number:lastManualCheck.mobileNumber,
+        p_device_token:token
+      });
+      const result=normalizeRpcData(data,"register_trusted_device");
+      if(error || !result || result.ok!==true) throw new Error(error?.message||result?.message||"فشل تفعيل الجهاز.");
+      saveTrustedDeviceToken(token);
+      setAutoDevicePanel(result.message||"تم تفعيل الجهاز. من الآن فصاعدًا يكفي مسح QR فقط.","ok",true);
+    }catch(err){
+      setAutoDevicePanel("فشل تفعيل الجهاز: "+err.message,"error",true);
+    }finally{ button.disabled=false; }
+  }
+
+  async function tryAutoVerifyFromTrustedDevice(){
+    const storedToken=getTrustedDeviceToken();
+    if(!storedToken || !qrClaimReady){
+      showManualSections(true);
+      return;
+    }
+
+    try{
+      showManualSections(false);
+      setResult("WAITING","جارِ التحقق تلقائيًا من الجهاز الموثوق...");
+      const {data,error}=await supabaseClient.rpc("auto_employee_check",{
+        p_device_token:storedToken,p_qr_token:activeQrToken
+      });
+      const result=normalizeRpcData(data,"auto_employee_check");
+      if(error || !result) throw new Error(error?.message||"فشل التحقق التلقائي.");
+      if(result.clear_device===true) clearTrustedDeviceToken();
+
+      setResult(result.result||"DENIED",result.message||"تم التحقق.");
+
+      if(result.ok===true && ["ALLOWED","LIMITED"].includes(result.result)){
+        showManualSections(false);
+      }else{
+        showManualSections(true);
+        setAutoDevicePanel(
+          result.message || "تعذر الدخول التلقائي. استخدم تسجيل الدخول اليدوي.",
+          "warning",
+          true
+        );
+      }
+    }catch(err){
+      showManualSections(true);
+      setResult("DENIED","تعذر التحقق التلقائي: "+err.message);
+      setAutoDevicePanel("استخدم تسجيل الدخول اليدوي، ثم أعد تفعيل الجهاز عند الحاجة.","warning",true);
+    }
+  }
+
+  $("checkForm").addEventListener("submit",async(event)=>{
+    event.preventDefault();
+    if(!supabaseClient){ setResult("DENIED","لا يمكن الاتصال بالنظام."); return; }
+    if(!qrClaimReady){ setResult("DENIED","امسح QR جديدًا من شاشة الحارس أولًا."); return; }
+
+    disableButton("checkButton",true,"جارِ التحقق...","تحقق من الدخول");
+    const payload={
+      p_employee_id:$("checkEmployeeId").value.trim(),
+      p_mobile_number:$("checkMobileNumber").value.trim(),
+      p_qr_token:activeQrToken
+    };
+    try{
+      const {data,error}=await supabaseClient.rpc("manual_employee_check",payload);
+      const result=normalizeRpcData(data,"manual_employee_check") || data;
+      if(error || !result) throw new Error(error?.message||"فشل التحقق.");
+      setResult(result.result||"DENIED",result.message||"تم التحقق.");
+      if(result.ok===true && ["ALLOWED","LIMITED"].includes(result.result)){
+        await checkTrustedDeviceEligibility(payload.p_employee_id,payload.p_mobile_number);
+      }else lastManualCheck=null;
+    }catch(err){
+      setResult("DENIED","حدث خطأ: "+err.message);
+    }finally{
+      disableButton("checkButton",false,"جارِ التحقق...","تحقق من الدخول");
+    }
+  });
+
+  $("registerForm").addEventListener("submit",async(event)=>{
+    event.preventDefault();
+    if(!supabaseClient){ setResult("DENIED","لا يمكن الاتصال بالنظام."); return; }
+
+    disableButton("registerButton",true,"جارِ إرسال الطلب...","إرسال طلب التسجيل");
+    const payload={
+      p_full_name:$("fullName").value.trim(),
+      p_employee_id:$("employeeId").value.trim(),
+      p_mobile_number:$("mobileNumber").value.trim(),
+      p_specialty:$("specialty").value.trim(),
+      p_qr_token:activeQrToken||null
+    };
+    try{
+      const {data,error}=await supabaseClient.rpc("register_employee_request",payload);
+      const result=normalizeRpcData(data,"register_employee_request") || data;
+      if(error || !result) throw new Error(error?.message||"فشل إرسال الطلب.");
+      setResult(result.result||"PENDING",result.message||"تم إرسال الطلب.");
+      if(result.ok===true) $("registerForm").reset();
+    }catch(err){
+      setResult("DENIED","حدث خطأ: "+err.message);
+    }finally{
+      disableButton("registerButton",false,"جارِ إرسال الطلب...","إرسال طلب التسجيل");
+    }
+  });
+
+  initSupabase();
+  claimQrSessionIfPresent();
+</script>
+</body>
+</html>
