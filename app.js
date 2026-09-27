@@ -1,20 +1,29 @@
 (function () {
 "use strict";
 
+
 const QR_REFRESH_MS = 30000;
-const CACHE_VERSION = "gate-screen-albashir-supabase-v3";
+const CACHE_VERSION = "gate-screen-albashir-supabase-v4";
 
 const config = window.AL_BASHIR_CONFIG || {};
 
+
 const elements = {
+
     date: document.getElementById("date"),
     time: document.getElementById("time"),
     shift: document.getElementById("shift"),
+
     qrContainer: document.getElementById("qrContainer"),
+
     status: document.getElementById("status"),
+
     update: document.getElementById("update"),
+
     expires: document.getElementById("expires"),
+
     gateName: document.getElementById("gateName")
+
 };
 
 
@@ -22,7 +31,7 @@ let gateData = null;
 
 
 
-function setStatus(message, ok=true){
+function setStatus(message, ok = true){
 
     if(!elements.status) return;
 
@@ -46,25 +55,25 @@ function apiUrl(path){
 
 function apiHeaders(){
 
-return {
+    return {
 
-    "apikey": config.SUPABASE_ANON_KEY,
+        "apikey":
+        config.SUPABASE_ANON_KEY,
 
-    "Authorization":
-    "Bearer " + config.SUPABASE_ANON_KEY,
+        "Authorization":
+        "Bearer " + config.SUPABASE_ANON_KEY,
 
-    "Content-Type":"application/json"
+        "Content-Type":
+        "application/json"
 
-};
+    };
 
 }
 
 
 
 
-
 async function loadGateData(){
-
 
 try{
 
@@ -97,14 +106,15 @@ body:JSON.stringify({})
 if(!response.ok){
 
 throw new Error(
-"RPC Error HTTP "+response.status
+"RPC ERROR " + response.status
 );
 
 }
 
 
 
-const data = await response.json();
+const data =
+await response.json();
 
 
 
@@ -118,7 +128,6 @@ Array.isArray(data)
 updateGate();
 
 
-
 setStatus(
 "النظام يعمل Online ✓",
 true
@@ -129,7 +138,6 @@ true
 }
 
 catch(error){
-
 
 console.error(error);
 
@@ -156,36 +164,81 @@ return;
 
 
 
-if(elements.date)
+// الوقت والتاريخ من توقيت الأردن
+
+const now = new Date();
+
+
+
+if(elements.date){
+
 elements.date.textContent =
-gateData.date || "--";
+
+now.toLocaleDateString(
+"ar-JO",
+{
+timeZone:"Asia/Amman",
+year:"numeric",
+month:"2-digit",
+day:"2-digit"
+}
+
+);
+
+}
 
 
 
-if(elements.time)
+if(elements.time){
+
 elements.time.textContent =
-gateData.time || "--";
+
+now.toLocaleTimeString(
+"ar-JO",
+{
+timeZone:"Asia/Amman",
+hour:"2-digit",
+minute:"2-digit",
+second:"2-digit"
+}
+
+);
+
+}
 
 
 
-if(elements.shift)
+
+if(elements.shift){
+
 elements.shift.textContent =
 gateData.shift || "--";
 
+}
 
 
-if(elements.gateName && gateData.gate_name)
+
+
+if(elements.gateName &&
+gateData.gate_name){
+
 elements.gateName.textContent =
 gateData.gate_name;
 
+}
 
 
-if(elements.expires)
+
+
+if(elements.expires){
+
 elements.expires.textContent =
 "ينتهي QR: " +
 (
 gateData.expires_at || "--"
 );
+
+}
 
 
 
@@ -209,27 +262,34 @@ window.QRCode;
 
 
 
-if(!qr || typeof qr.toCanvas !== "function"){
+if(!qr ||
+typeof qr.toCanvas !== "function"){
+
 
 setStatus(
 "مكتبة QR غير موجودة",
 false
 );
 
+
 return;
 
 }
+
 
 
 
 if(!token){
 
+
 elements.qrContainer.textContent =
 "لا يوجد QR";
+
 
 return;
 
 }
+
 
 
 
@@ -249,15 +309,18 @@ token,
 
 {
 
-width:300,
+width:450,
 
-margin:2,
+margin:3,
 
 errorCorrectionLevel:"M",
 
 color:{
+
 dark:"#000000",
+
 light:"#ffffff"
+
 }
 
 }
@@ -266,15 +329,24 @@ light:"#ffffff"
 
 
 
-elements.qrContainer.replaceChildren(canvas);
+elements.qrContainer
+.replaceChildren(canvas);
 
 
 
-if(elements.update)
+if(elements.update){
 
 elements.update.textContent =
-"آخر تحديث QR: "+
-new Date().toLocaleTimeString("ar-JO");
+"آخر تحديث QR: " +
+new Date()
+.toLocaleTimeString(
+"ar-JO",
+{
+timeZone:"Asia/Amman"
+}
+);
+
+}
 
 
 
@@ -287,9 +359,15 @@ elements.qrContainer.textContent =
 "فشل إنشاء QR";
 
 
-}
+console.error(error);
+
 
 }
+
+
+}
+
+
 
 
 
@@ -324,13 +402,13 @@ navigator.serviceWorker.register(
 
 
 
-
 window.__GATE_SCREEN_CACHE_VERSION__ =
 CACHE_VERSION;
 
 
 
 loadGateData();
+
 
 
 setInterval(
