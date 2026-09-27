@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>ALBASHIR Admin Roles</title>
+
+<link rel="stylesheet" href="./style.css">
+
+</head>
+
+
+<body>
+
+
+<main class="admin-shell">
+
+
+<section class="admin-card">
+
+
+<h1>
+إدارة الأدمنز والصلاحيات
+</h1>
+
+
+<p class="admin-note">
+إدارة صلاحيات المستخدمين من جدول user_roles
+</p>
+
+
+
+<form id="loginForm">
+
+
+<label>
+البريد الإلكتروني
+</label>
+
+
+<input 
+id="email"
+type="email"
+required
+>
+
+
+<label>
+كلمة المرور
+</label>
+
+
+<input
+id="password"
+type="password"
+required
+>
+
+
+
+<button type="submit">
+تسجيل الدخول
+</button>
+
+
+</form>
+
+
+
+<hr style="margin:30px 0;border:0;border-top:1px solid #333;">
+
+
+
+<form id="roleForm">
+
+
+<h2>
+إضافة / تعديل صلاحية
+</h2>
+
+
+
+<label>
+User ID من Supabase Auth
+</label>
+
+
+<input
+id="userId"
+placeholder="xxxxxxxx-xxxx-xxxx"
+required
+>
+
+
+
+<label>
+Role
+</label>
+
+
+<select id="role">
+
+
+<option value="admin">
+Admin
+</option>
+
+
+<option value="manager">
+Manager
+</option>
+
+
+<option value="viewer">
+Viewer
+</option>
+
+
+</select>
+
+
+
+<button type="submit">
+حفظ الصلاحية
+</button>
+
+
+</form>
+
+
+
+
+<hr style="margin:30px 0;border:0;border-top:1px solid #333;">
+
+
+
+<h2>
+المستخدمون والصلاحيات
+</h2>
+
+
+<div id="rolesList">
+
+جاري التحميل...
+
+</div>
+
+
+
+
+<div id="result"></div>
+
+
+
+</section>
+
+
+</main>
+
+
+
+<script src="./config.js"></script>
+
+<script src="./admins.js"></script>
+
+
+</body>
+
+</html>
