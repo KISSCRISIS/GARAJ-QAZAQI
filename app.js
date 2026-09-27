@@ -3,7 +3,7 @@
 
 
 const QR_REFRESH_MS = 30000;
-const CACHE_VERSION = "gate-screen-albashir-supabase-v4";
+const CACHE_VERSION = "gate-screen-albashir-supabase-v5";
 
 const config = window.AL_BASHIR_CONFIG || {};
 
@@ -164,7 +164,7 @@ return;
 
 
 
-// الوقت والتاريخ من توقيت الأردن
+// التاريخ والوقت بتوقيت الأردن
 
 const now = new Date();
 
@@ -189,6 +189,7 @@ day:"2-digit"
 
 
 
+
 if(elements.time){
 
 elements.time.textContent =
@@ -209,12 +210,30 @@ second:"2-digit"
 
 
 
+
+// تحويل الشفت
+
 if(elements.shift){
 
-elements.shift.textContent =
-gateData.shift || "--";
+let shift = gateData.shift || "--";
+
+
+if(shift === "A")
+shift = "الوردية الصباحية";
+
+
+if(shift === "B")
+shift = "الوردية المسائية";
+
+
+if(shift === "C")
+shift = "الوردية الليلية";
+
+
+elements.shift.textContent = shift;
 
 }
+
 
 
 
@@ -230,15 +249,45 @@ gateData.gate_name;
 
 
 
+
+// انتهاء QR
+
 if(elements.expires){
+
+
+if(gateData.expires_at){
+
+
+const exp =
+new Date(gateData.expires_at);
+
+
 
 elements.expires.textContent =
 "ينتهي QR: " +
-(
-gateData.expires_at || "--"
+exp.toLocaleTimeString(
+"ar-JO",
+{
+timeZone:"Asia/Amman",
+hour:"2-digit",
+minute:"2-digit"
+}
 );
 
+
+
+}else{
+
+
+elements.expires.textContent =
+"ينتهي QR: --";
+
+
 }
+
+
+}
+
 
 
 
@@ -279,6 +328,7 @@ return;
 
 
 
+
 if(!token){
 
 
@@ -289,6 +339,7 @@ elements.qrContainer.textContent =
 return;
 
 }
+
 
 
 
@@ -309,7 +360,7 @@ token,
 
 {
 
-width:450,
+width:350,
 
 margin:3,
 
