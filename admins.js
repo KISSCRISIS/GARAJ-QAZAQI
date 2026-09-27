@@ -1,128 +1,75 @@
 (function () {
-
 "use strict";
-
 
 const config = window.AL_BASHIR_CONFIG || {};
 
+const loginForm = document.getElementById("loginForm");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+
+const roleSelect = document.getElementById("role");
+const userIdInput = document.getElementById("userId");
+
+const result = document.getElementById("result");
+const rolesList = document.getElementById("rolesList");
 
 let session = null;
+let currentRole = null;
 
 
 
-const loginForm =
-document.getElementById("loginForm");
-
-
-const roleForm =
-document.getElementById("roleForm");
-
-
-const rolesList =
-document.getElementById("rolesList");
-
-
-const result =
-document.getElementById("result");
-
-
-
-const email =
-document.getElementById("email");
-
-
-const password =
-document.getElementById("password");
-
-
-const userId =
-document.getElementById("userId");
-
-
-const role =
-document.getElementById("role");
-
-
-
-
-
-
-function apiUrl(path){
-
-return String(config.SUPABASE_URL || "")
-.replace(/\/$/,"") + path;
-
+function api(path){
+    return String(config.SUPABASE_URL || "")
+    .replace(/\/$/,"") + path;
 }
-
-
 
 
 
 function headers(){
 
-
 return {
 
-"apikey":
-config.SUPABASE_ANON_KEY,
-
+"apikey": config.SUPABASE_ANON_KEY,
 
 "Authorization":
-"Bearer " +
-(
-session?.access_token ||
-config.SUPABASE_ANON_KEY
-),
-
+"Bearer " + session.access_token,
 
 "Content-Type":
 "application/json"
 
 };
 
-
 }
 
 
 
+function show(message,error=false){
 
-function message(text,error=false){
+if(result){
 
-
-result.textContent=text;
-
+result.textContent = message;
 
 result.style.color =
 error ? "#ff7777" : "#6cff8a";
 
+}
 
 }
 
 
 
 
-
-// LOGIN
-
-loginForm.addEventListener(
-"submit",
-async function(e){
-
+async function login(e){
 
 e.preventDefault();
 
-
 try{
 
+show("جاري تسجيل الدخول...");
 
-message("جاري تسجيل الدخول...");
+const response = await fetch(
 
-
-const res = await fetch(
-
-apiUrl(
-"/auth/v1/token?grant_type=password"
-),
+api("/auth/v1/token?grant_type=password"),
 
 {
 
@@ -130,23 +77,19 @@ method:"POST",
 
 headers:{
 
-"apikey":
-config.SUPABASE_ANON_KEY,
+apikey:config.SUPABASE_ANON_KEY,
 
-"Content-Type":
-"application/json"
+"Content-Type":"application/json"
 
 },
-
 
 body:JSON.stringify({
 
 email:
-email.value.trim(),
-
+emailInput.value.trim(),
 
 password:
-password.value
+passwordInput.value
 
 })
 
@@ -156,62 +99,45 @@ password.value
 
 
 
-if(!res.ok)
-throw Error("فشل تسجيل الدخول");
+if(!response.ok)
+throw new Error("بيانات الدخول غير صحيحة");
 
 
-
-session =
-await res.json();
+session = await response.json();
 
 
-
-message(
-"تم تسجيل الدخول"
+localStorage.setItem(
+"albashir_admin_session",
+JSON.stringify(session)
 );
 
 
+await checkRole();
 
-loadRoles();
 
 
+}catch(err){
+
+show(err.message,true);
 
 }
-
-catch(err){
-
-
-message(
-err.message,
-true
-);
-
 
 }
 
 
 
-});
 
 
+async function checkRole(){
+
+const user =
+session.user.id;
 
 
+const response = await fetch(
 
-
-
-// LOAD ROLES
-
-async function loadRoles(){
-
-
-try{
-
-
-const res =
-await fetch(
-
-apiUrl(
-"/rest/v1/user_roles?select=*"
+api(
+"/rest/v1/user_roles?user_id=eq."+user
 ),
 
 {
@@ -224,99 +150,111 @@ headers:headers()
 
 
 
-if(!res.ok)
-throw Error();
+if(!response.ok)
+throw new Error("لا يمكن قراءة الصلاحيات");
+
+
+const data =
+await response.json();
+
+
+if(!data.length){
+
+throw new Error(
+"لا يوجد دور مرتبط بهذا المستخدم"
+);
+
+}
+
+
+
+currentRole =
+data[0].role;
+
+
+
+if(currentRole !== "SUPER_ADMIN"){
+
+throw new Error(
+"هذا الحساب ليس SUPER_ADMIN"
+);
+
+}
+
+
+
+show(
+"تم الدخول كـ SUPER_ADMIN"
+);
+
+
+
+loadRoles();
+
+
+}
+
+
+
+
+
+
+
+async function loadRoles(){
+
+const response = await fetch(
+
+api("/rest/v1/user_roles?select=*"),
+
+{
+
+headers:headers()
+
+}
+
+);
 
 
 
 const data =
-await res.json();
+await response.json();
 
 
 
-renderRoles(data);
+if(!rolesList)
+return;
 
-
-
-}
-
-catch(e){
-
-
-rolesList.textContent =
-"تعذر تحميل الصلاحيات";
-
-
-}
-
-}
-
-
-
-
-
-function renderRoles(data){
 
 
 rolesList.innerHTML="";
 
 
 
-if(!data.length){
-
-rolesList.textContent =
-"لا توجد صلاحيات";
-
-return;
-
-}
+data.forEach(row=>{
 
 
-
-data.forEach(item=>{
-
-
-const box =
+const item =
 document.createElement("div");
 
 
-box.style.background="#151515";
-
-box.style.padding="15px";
-
-box.style.margin="15px 0";
-
-box.style.borderRadius="15px";
+item.className="role-item";
 
 
-box.innerHTML = `
+item.innerHTML = `
 
-<strong>User ID:</strong>
+<div>
+<b>${row.role}</b>
 <br>
-${item.user_id}
-
-<br><br>
-
-<strong>Role:</strong>
-${item.role}
-
-<br><br>
-
-<button>
-حذف
-</button>
+${row.user_id || ""}
+<br>
+${row.employee_id || ""}
+</div>
 
 `;
 
 
 
-box.querySelector("button")
-.onclick = () =>
-deleteRole(item.id);
-
-
-
-rolesList.appendChild(box);
+rolesList.appendChild(item);
 
 
 
@@ -331,21 +269,16 @@ rolesList.appendChild(box);
 
 
 
-// ADD / UPDATE ROLE
 
-roleForm.addEventListener(
-"submit",
-async function(e){
-
+async function saveRole(e){
 
 e.preventDefault();
 
 
+if(currentRole !== "SUPER_ADMIN"){
 
-if(!session){
-
-message(
-"سجل الدخول أولاً",
+show(
+"ليس لديك صلاحية",
 true
 );
 
@@ -355,16 +288,36 @@ return;
 
 
 
+const uid =
+userIdInput.value.trim();
+
+
+
+const role =
+roleSelect.value;
+
+
+
+if(!uid){
+
+show(
+"أدخل User ID",
+true
+);
+
+return;
+
+}
+
+
 
 try{
 
 
-const res =
+const response =
 await fetch(
 
-apiUrl(
-"/rest/v1/user_roles"
-),
+api("/rest/v1/user_roles"),
 
 {
 
@@ -379,16 +332,11 @@ headers:{
 
 },
 
-
 body:JSON.stringify({
 
-user_id:
-userId.value.trim(),
+user_id:uid,
 
-
-role:
-role.value
-
+role:role
 
 })
 
@@ -398,14 +346,15 @@ role.value
 
 
 
-if(!res.ok)
-throw Error(
-"فشل حفظ الصلاحية"
+if(!response.ok)
+
+throw new Error(
+"فشل حفظ الدور"
 );
 
 
 
-message(
+show(
 "تم حفظ الصلاحية"
 );
 
@@ -415,78 +364,71 @@ loadRoles();
 
 
 
-}
+}catch(err){
 
-catch(err){
-
-
-message(
+show(
 err.message,
 true
 );
 
+}
+
 
 }
 
 
 
-});
 
 
 
 
+function restore(){
+
+const old =
+localStorage.getItem(
+"albashir_admin_session"
+);
 
 
+if(old){
+
+try{
+
+session =
+JSON.parse(old);
 
 
-// DELETE ROLE
-
-async function deleteRole(id){
-
-
-if(!confirm("حذف هذه الصلاحية؟"))
-return;
-
-
-
-const res =
-await fetch(
-
-apiUrl(
-"/rest/v1/user_roles?id=eq."+id
-),
-
-{
-
-method:"DELETE",
-
-headers:headers()
+}catch{}
 
 }
 
+}
+
+
+
+if(loginForm)
+
+loginForm.addEventListener(
+"submit",
+login
 );
 
 
 
-if(res.ok){
+const roleForm =
+document.getElementById("roleForm");
 
-message(
-"تم الحذف"
+
+if(roleForm)
+
+roleForm.addEventListener(
+"submit",
+saveRole
 );
 
-loadRoles();
-
-}
 
 
-}
-
-
-
-
-
-
-loadRoles();
+restore();
 
 
 
