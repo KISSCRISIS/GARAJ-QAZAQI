@@ -1,277 +1,347 @@
 (function () {
-  "use strict";
+"use strict";
 
-  const QR_REFRESH_MS = 30000;
-  const STORAGE_KEY = "albashir_gate_last_data";
+const QR_REFRESH_MS = 30000;
+const CACHE_VERSION = "gate-screen-albashir-supabase-v3";
 
-  const config = window.AL_BASHIR_CONFIG || {};
+const config = window.AL_BASHIR_CONFIG || {};
 
-  const elements = {
+const elements = {
     date: document.getElementById("date"),
     time: document.getElementById("time"),
     shift: document.getElementById("shift"),
     qrContainer: document.getElementById("qrContainer"),
     status: document.getElementById("status"),
-    update: document.getElementById("update")
-  };
+    update: document.getElementById("update"),
+    expires: document.getElementById("expires"),
+    gateName: document.getElementById("gateName")
+};
 
-  let currentData = null;
 
-  function setStatus(message, ok) {
-    if (!elements.status) return;
+let gateData = null;
+
+
+
+function setStatus(message, ok=true){
+
+    if(!elements.status) return;
+
     elements.status.textContent = message;
-    elements.status.style.color = ok ? "#6cff8a" : "#ff7777";
-  }
 
+    elements.status.style.color =
+    ok ? "#6cff8a" : "#ff7777";
 
-  function localShift() {
-    const hour = new Date().getHours();
+}
 
-    if (hour >= 7 && hour < 15) return "الوردية الصباحية";
-    if (hour >= 15 && hour < 23) return "الوردية المسائية";
 
-    return "الوردية الليلية";
-  }
 
+function apiUrl(path){
 
-  function updateClock(data) {
-    const now = new Date();
+    return String(config.SUPABASE_URL || "")
+    .replace(/\/$/,"") + path;
 
-    elements.date.textContent =
-      data?.date || now.toLocaleDateString("ar-JO");
+}
 
-    elements.time.textContent =
-      data?.time || now.toLocaleTimeString("ar-JO");
 
-    elements.shift.textContent =
-      data?.shift || localShift();
-  }
 
+function apiHeaders(){
 
-  function saveOffline(data) {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(data)
-    );
-  }
+return {
 
+    "apikey": config.SUPABASE_ANON_KEY,
 
-  function loadOffline() {
-    try {
-      return JSON.parse(
-        localStorage.getItem(STORAGE_KEY)
-      );
-    } catch {
-      return null;
-    }
-  }
+    "Authorization":
+    "Bearer " + config.SUPABASE_ANON_KEY,
 
+    "Content-Type":"application/json"
 
-  async function getGateData() {
+};
 
-    if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
-      return null;
-    }
+}
 
-    const url =
-      config.SUPABASE_URL.replace(/\/$/, "") +
-      "/rest/v1/rpc/" +
-      (config.RPC_NAME || "gate_screen_api");
 
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        apikey: config.SUPABASE_ANON_KEY,
-        Authorization:
-          "Bearer " + config.SUPABASE_ANON_KEY,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({})
-    });
 
 
-    if (!response.ok) {
-      throw new Error("Supabase error " + response.status);
-    }
+async function loadGateData(){
 
 
-    const result = await response.json();
+try{
 
 
-    return result.data || result;
+const rpc =
+config.RPC_NAME || "gate_screen_api";
 
-  }
 
 
+const response = await fetch(
 
-  function drawQR(token) {
+apiUrl(
+"/rest/v1/rpc/" + rpc
+),
 
-    const qr = window.QRCode;
+{
 
+method:"POST",
 
-    if (!qr || typeof qr.toCanvas !== "function") {
+headers:apiHeaders(),
 
-      elements.qrContainer.textContent =
-        "QRCode library missing";
+body:JSON.stringify({})
 
-      setStatus(
-        "مشكلة في مكتبة QR",
-        false
-      );
+}
 
-      return;
-    }
+);
 
 
-    if (!token) {
 
-      elements.qrContainer.textContent =
-        "لا يوجد QR حاليا";
+if(!response.ok){
 
-      setStatus(
-        "لا يوجد Token",
-        false
-      );
+throw new Error(
+"RPC Error HTTP "+response.status
+);
 
-      return;
-    }
+}
 
 
 
-    const canvas = document.createElement("canvas");
+const data = await response.json();
 
 
-    qr.toCanvas(
-      canvas,
-      token,
-      {
-        width: 300,
-        margin: 2,
-        errorCorrectionLevel: "M"
-      },
-      function (error) {
 
-        if (error) {
+gateData =
+Array.isArray(data)
+? data[0]
+: data;
 
-          elements.qrContainer.textContent =
-            "فشل إنشاء QR";
 
-          return;
 
-        }
+updateGate();
 
 
-        elements.qrContainer.replaceChildren(canvas);
 
-        elements.update.textContent =
-          "آخر تحديث QR: " +
-          new Date().toLocaleTimeString("ar-JO");
+setStatus(
+"النظام يعمل Online ✓",
+true
+);
 
-      }
-    );
 
-  }
 
+}
 
+catch(error){
 
-  async function refreshGate() {
 
-    try {
+console.error(error);
 
-      const data = await getGateData();
 
+setStatus(
+"تعذر الاتصال بالنظام",
+false
+);
 
-      if (data) {
 
-        currentData = data;
+}
 
-        saveOffline(data);
+}
 
-        updateClock(data);
 
-        drawQR(
-          data.qr_token
-        );
 
-        setStatus(
-          data.system_status === "ONLINE"
-            ? "النظام يعمل ✓"
-            : "النظام غير متاح",
-          data.system_status === "ONLINE"
-        );
 
-        return;
-      }
 
+function updateGate(){
 
-    } catch (error) {
 
-      console.log(error);
+if(!gateData)
+return;
 
-    }
 
 
-    // Offline fallback
+if(elements.date)
+elements.date.textContent =
+gateData.date || "--";
 
-    const offlineData = loadOffline();
 
 
-    if (offlineData) {
+if(elements.time)
+elements.time.textContent =
+gateData.time || "--";
 
-      currentData = offlineData;
 
-      updateClock(offlineData);
 
-      drawQR(
-        offlineData.qr_token
-      );
+if(elements.shift)
+elements.shift.textContent =
+gateData.shift || "--";
 
-      setStatus(
-        "النظام يعمل Offline ✓",
-        true
-      );
 
-    } else {
 
-      updateClock(null);
+if(elements.gateName && gateData.gate_name)
+elements.gateName.textContent =
+gateData.gate_name;
 
-      drawQR(null);
 
-      setStatus(
-        "لا توجد بيانات",
-        false
-      );
 
-    }
+if(elements.expires)
+elements.expires.textContent =
+"ينتهي QR: " +
+(
+gateData.expires_at || "--"
+);
 
-  }
 
 
+drawQr(
+gateData.qr_token
+);
 
-  if ("serviceWorker" in navigator) {
 
-    navigator.serviceWorker.register(
-      "./service-worker.js"
-    ).catch(console.error);
 
-  }
+}
 
 
-  refreshGate();
 
-  setInterval(
-    refreshGate,
-    QR_REFRESH_MS
-  );
 
 
-  setInterval(
-    function () {
-      updateClock(currentData);
-    },
-    1000
-  );
+async function drawQr(token){
+
+
+const qr =
+window.QRCode;
+
+
+
+if(!qr || typeof qr.toCanvas !== "function"){
+
+setStatus(
+"مكتبة QR غير موجودة",
+false
+);
+
+return;
+
+}
+
+
+
+if(!token){
+
+elements.qrContainer.textContent =
+"لا يوجد QR";
+
+return;
+
+}
+
+
+
+const canvas =
+document.createElement("canvas");
+
+
+
+try{
+
+
+await qr.toCanvas(
+
+canvas,
+
+token,
+
+{
+
+width:300,
+
+margin:2,
+
+errorCorrectionLevel:"M",
+
+color:{
+dark:"#000000",
+light:"#ffffff"
+}
+
+}
+
+);
+
+
+
+elements.qrContainer.replaceChildren(canvas);
+
+
+
+if(elements.update)
+
+elements.update.textContent =
+"آخر تحديث QR: "+
+new Date().toLocaleTimeString("ar-JO");
+
+
+
+}
+
+catch(error){
+
+
+elements.qrContainer.textContent =
+"فشل إنشاء QR";
+
+
+}
+
+}
+
+
+
+
+
+function registerServiceWorker(){
+
+
+if(!("serviceWorker" in navigator))
+return;
+
+
+
+window.addEventListener(
+"load",
+()=>{
+
+
+navigator.serviceWorker.register(
+"./service-worker.js"
+)
+.catch(()=>{});
+
+
+}
+
+);
+
+
+}
+
+
+
+
+
+window.__GATE_SCREEN_CACHE_VERSION__ =
+CACHE_VERSION;
+
+
+
+loadGateData();
+
+
+setInterval(
+loadGateData,
+QR_REFRESH_MS
+);
+
+
+
+registerServiceWorker();
+
 
 
 })();
