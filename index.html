@@ -1,41 +1,164 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>ALBASHIR Hospital Gate</title>
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css">
+
+<link rel="manifest" href="./manifest.json">
+<link rel="stylesheet" href="./style.css">
+
+<meta name="theme-color" content="#09090b">
 </head>
+
+
 <body>
 
-<header>
-<h2>ALBASHIR HOSPITAL / EMERGENCY DEPARTMENT</h2>
-<h3>مستشفى الاسعاف والطوارئ البشير</h3>
+<header class="top-header">
+
+    <h2>
+        ALBASHIR HOSPITAL / EMERGENCY DEPARTMENT
+    </h2>
+
+    <h3>
+        مستشفى الاسعاف والطوارئ البشير
+    </h3>
+
 </header>
 
+
 <main class="gate-screen">
-<section class="card"><img src="logo.jpg" class="logo">
 
-<h1>بوابة الدخول</h1>
+<section class="card">
 
-<div id="date">--</div>
-<div id="time">--</div>
-<div id="shift">--</div>
 
-<div id="qrContainer">
-جاري تحميل QR...
-</div>
+    <img 
+        src="./logo.jpg" 
+        class="logo"
+        alt="ALBASHIR Hospital Logo"
+    >
 
-<div id="status">النظام يعمل ✓</div>
-<div id="update">آخر تحديث QR: --</div>
+
+    <h1>
+        بوابة الدخول
+    </h1>
+
+
+    <div 
+        id="gateName"
+        class="gate-name"
+    >
+        بوابة الدخول الرئيسية
+    </div>
+
+
+    <div class="info-box">
+
+
+        <div class="info-item">
+
+            <span>
+                التاريخ
+            </span>
+
+            <strong id="date">
+                --
+            </strong>
+
+        </div>
+
+
+        <div class="info-item">
+
+            <span>
+                الوقت
+            </span>
+
+            <strong id="time">
+                --
+            </strong>
+
+        </div>
+
+
+        <div class="info-item">
+
+            <span>
+                الشفت
+            </span>
+
+            <strong id="shift">
+                --
+            </strong>
+
+        </div>
+
+
+    </div>
+
+
+
+    <div 
+        id="qrContainer"
+        class="qr-container"
+    >
+        جاري تحميل QR...
+    </div>
+
+
+
+    <div 
+        id="expires"
+        class="expires"
+    >
+    </div>
+
+
+
+    <div 
+        id="status"
+        class="status"
+    >
+        النظام يعمل ✓
+    </div>
+
+
+
+    <div 
+        id="update"
+        class="update"
+    >
+        آخر تحديث QR: --
+    </div>
+
+
+
+</section>
 
 </main>
 
+
+
 <script src="./qrcode.min.js"></script>
+
+
 <script>
-window.QRCode = window.QRCode || (typeof QRCode !== "undefined" ? QRCode : null);
+window.QRCode = window.QRCode || 
+(
+    typeof QRCode !== "undefined" 
+    ? QRCode 
+    : null
+);
 </script>
+
+
+<script src="./config.js"></script>
+
 <script src="./app.js"></script>
+
+
 </body>
+
 </html>
