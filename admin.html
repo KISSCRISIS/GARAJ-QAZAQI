@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Employee Photos | ALBASHIR Gate</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body{display:block;overflow:auto}
+.admin-shell{width:min(1100px,100%);margin:0 auto;padding:32px}
+.admin-card{background:var(--panel);border:1px solid var(--line);border-radius:28px;padding:24px;box-shadow:var(--shadow)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+label{display:block;color:#ffccd2;font-weight:900;margin:14px 0 8px}
+input,button{width:100%;border:1px solid var(--line);border-radius:14px;padding:14px;font:inherit}
+input{background:#0f0f12;color:var(--text)}
+button{cursor:pointer;background:linear-gradient(135deg,var(--red-dark),var(--red));color:white;font-weight:950;margin-top:18px}
+.preview{width:220px;height:220px;border-radius:24px;object-fit:cover;background:#09090b;border:1px solid var(--line)}
+.admin-note{color:var(--muted);line-height:1.8}
+.result{margin-top:18px;color:var(--green);font-weight:900}
+@media(max-width:800px){.form-grid{grid-template-columns:1fr}.preview{width:100%;height:auto;aspect-ratio:1}}
+</style>
+</head>
+<body>
+<main class="admin-shell">
+  <section class="admin-card">
+    <p class="eyebrow">Employee Photo Admin</p>
+    <h1 style="font-size:clamp(34px,4vw,62px)">صور الموظفين</h1>
+    <p class="admin-note">
+      هذه الصفحة اختيارية للإدارة. تحتاج إعداد `config.js` وتشغيل `supabase_employee_photos.sql`.
+      الصور تحفظ في Bucket خاص وتعرض بروابط مؤقتة Signed URLs.
+    </p>
+
+    <form id="loginForm" class="form-grid">
+      <div>
+        <label for="email">إيميل الإدارة</label>
+        <input id="email" type="email" autocomplete="email">
+      </div>
+      <div>
+        <label for="password">كلمة المرور</label>
+        <input id="password" type="password" autocomplete="current-password">
+      </div>
+      <button type="submit">تسجيل دخول Supabase</button>
+    </form>
+
+    <hr style="border:0;border-top:1px solid var(--line);margin:24px 0">
+
+    <div class="form-grid">
+      <form id="employeeForm">
+        <label for="employeeId">رقم الموظف</label>
+        <input id="employeeId" required autocomplete="off">
+
+        <label for="fullName">اسم الموظف</label>
+        <input id="fullName" autocomplete="name">
+
+        <label for="photoFile">صورة الموظف</label>
+        <input id="photoFile" type="file" accept="image/*">
+
+        <button type="submit">رفع وربط الصورة</button>
+      </form>
+
+      <div>
+        <label>معاينة</label>
+        <img id="preview" class="preview" alt="معاينة صورة الموظف">
+        <div id="result" class="result"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="./config.js"></script>
+<script src="./admin.js"></script>
+</body>
+</html>
